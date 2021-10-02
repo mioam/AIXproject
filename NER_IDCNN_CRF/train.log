@@ -1,0 +1,40 @@
+2021-08-31 10:26:56,592 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-09-30 21:41:21,571 - train.log - INFO - Created model with fresh parameters.
+2021-09-30 21:41:22,619 - train.log - INFO - Load pre-trained embedding.
+2021-09-30 21:42:53,335 - train.log - INFO - Created model with fresh parameters.
+2021-09-30 21:42:54,462 - train.log - INFO - Load pre-trained embedding.
+2021-10-01 10:43:50,567 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 13:03:44,265 - train.log - INFO - Created model with fresh parameters.
+2021-10-01 13:03:48,150 - train.log - INFO - Load pre-trained embedding.
+2021-10-01 13:05:01,034 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 15:36:53,514 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 15:38:22,010 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 16:27:03,945 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 16:29:20,652 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 20:38:59,685 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 20:39:39,865 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 20:45:38,337 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 20:46:24,827 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 20:48:00,634 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 20:49:55,632 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 20:52:27,469 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 20:54:07,865 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 20:58:10,918 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 20:58:56,964 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 21:00:11,793 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 21:02:48,454 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 21:03:41,039 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 21:05:24,900 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 21:47:53,382 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 21:52:43,701 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 21:55:32,970 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 22:07:38,922 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 22:09:01,709 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 23:03:05,585 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 23:05:38,237 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 23:06:59,312 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 23:11:22,389 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 23:14:31,529 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 23:17:14,688 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 23:26:15,941 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-01 23:28:02,523 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
