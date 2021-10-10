@@ -6,9 +6,9 @@
   - 数据预处理。把 `./datasets/json/content[0-9]*.json` 和 `./datasets/json/0.json` 中有用的对提出来，relabel，tokenize。炸内存。
 - `./pre1_relabel.py`
   - 数据预处理。把 `./datasets/json/content[0-9]*.json` 和 `./datasets/json/0.json` 中有用的对提出来，relabel。
-  - `./datasets/pre/content.pt`
+  - **`./datasets/pre/content.pt`**
     - list，每个元素是文本内容，字符串。
-  - `./datasets/pre/relation.pt`
+  - **`./datasets/pre/relation.pt`**
     - list，每个元素是tuple (x,y)，表示第x和第y篇有联系。
     - 是原始的相关文书标签relabel
     - 删除了和自身的联系
@@ -33,7 +33,7 @@ virtualenv: tf1
 - `./NER_IDCNN_CRF\my_extraction.py`
   - 读取 `./datasets/pre/content.pt`，用 BeautifulSoup 提取文本，用jionlp分句，用 https://github.com/crownpku/Information-Extraction-Chinese 进行预处理。
   - 忽略以 ('审判长', '审判员', '代理审判员', '人民陪审员', '书记员', '执行员') 开头的行及之后的行。
-  - `./datasets/feature/entity.pt` 保存对应文本的LOC，ORG，PER。词和次数的tuple。
+  - **`./datasets/feature/entity.pt`** 保存对应文本的LOC，ORG，PER。词和次数的tuple。
   - NER不够行，会有逗号。会有不低的错误率。
   - 有些词应当删除，如“中华人民共和国”。
 - `./NER_IDCNN_CRF\only_soup.py`
@@ -46,3 +46,9 @@ virtualenv: tf1
 - `./dataset.py`
   - FeatureDataset
   - WenshuDataset
+
+TODO:
+
+BERTOutputDataset
+NEFDataset
+train.py

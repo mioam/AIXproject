@@ -38,3 +38,7 @@
 2021-10-01 23:17:14,688 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
 2021-10-01 23:26:15,941 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
 2021-10-01 23:28:02,523 - train.log - INFO - Reading model parameters from ckpt_IDCNN\ner.ckpt
+2021-10-04 18:09:08,247 - train.log - INFO - Created model with fresh parameters.
+2021-10-04 18:09:09,667 - train.log - INFO - Load pre-trained embedding.
+2021-10-04 18:10:00,223 - train.log - INFO - Created model with fresh parameters.
+2021-10-04 18:10:01,244 - train.log - INFO - Load pre-trained embedding.

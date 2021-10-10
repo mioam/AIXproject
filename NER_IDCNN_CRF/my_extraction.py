@@ -192,6 +192,7 @@ def train():
                 save_model(sess, model, FLAGS.ckpt_path, logger)
             evaluate(sess, model, "test", test_manager, id_to_tag, logger)
 
+from tqdm import tqdm
 
 def evaluate_line(texts):
     config = load_config(FLAGS.config_file)
@@ -204,7 +205,7 @@ def evaluate_line(texts):
     with tf.Session(config=tf_config) as sess:
         model = create_model(sess, Model, FLAGS.ckpt_path, load_word2vec, config, id_to_char, logger, False)
         ans = []
-        for html_text in texts[:100]:
+        for html_text in tqdm(texts):
             text = extract_plaintext(html_text)
             result = []
             for x in text:
