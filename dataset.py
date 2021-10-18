@@ -14,6 +14,7 @@ class FeatureDataset(torch.utils.data.Dataset):
 
         features: List[List] = [torch.load(feature) for feature in features]
         print('FEATURES LOADED.')
+        # print(features[0])
 
         need = {}
         for x in relation:
@@ -26,7 +27,7 @@ class FeatureDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index) -> Tuple[List, List]:
         x = self.relation[index]
-        return self.need[x[0]], self.need[x[1]]
+        return self.need[x[0]], self.need[x[1]], (x[0],x[1])
 
     def __len__(self) -> int:
         return len(self.relation)

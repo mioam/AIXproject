@@ -1,41 +1,48 @@
 import torch
+from torch.nn import functional as F
 import time
 
 from models.net import SimpleNet
 from models.nef import NEFBasedNet
+from models.bert import BertNet
 
 from dataset import FeatureDataset
 
 num_epoch = 1
 
 def main():
-    model = NEFBasedNet()
+    model = BertNet()
+    # model = NEFBasedNet()
     # model.to('cuda')
     model.train()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=0.01, weight_decay=1e-2)
 
     batch_size = 8
-    dataset = FeatureDataset(['./datasets/feature/entity.pt'], (0, 100))
+    # dataset = FeatureDataset(['./datasets/feature/entity.pt'], (0, 100))
+    dataset = FeatureDataset(['./datasets/feature/bert.pt'])
 
     dataloader = torch.utils.data.DataLoader(
         dataset, batch_size=batch_size, shuffle=True, drop_last=True)
 
     for epoch in range(num_epoch):
-        for x in dataloader:
+        for x, y, ex in dataloader:
             n = len(x[0])
-            positive = 0
-            negative = 0
+            # print(n)
+            positive = []
+            negative = []
             for a in range(n):
                 for b in range(n):
-                    dis = model(x[0][a], x[1][b])
+                    dis = model(x[0][a], y[0][b])
                     if a == b: 
-                        positive += dis
+                        positive.append(dis)
                     else:
-                        negative += dis
+                        negative.append(dis)
+            positive = torch.stack(positive)
+            negative = torch.stack(negative)
 
-            print(positive.item(), negative.item())
+            print(positive[0].item(), negative[0].item(), (ex[0][0], ex[1][0]), (ex[0][0], ex[1][1]))
 
-            loss = positive - negative
+            loss = F.relu(0.5-positive).sum() + F.relu(0.5+negative).sum()
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()

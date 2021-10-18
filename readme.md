@@ -26,18 +26,27 @@ requirement:
 
 cuda10? https://developer.nvidia.com/blog/accelerating-tensorflow-on-a100-gpus/
 
-tensorflow==1.15 jieba beautifulsoup4 jionlp
+tensorflow-gpu==1.15 jieba beautifulsoup4 jionlp
 
 virtualenv: tf1
 
-- `./NER_IDCNN_CRF\my_extraction.py`
+command: `python my_extraction.py --ckpt_path=ckpt_IDCNN`
+
+- `./NER_IDCNN_CRF/my_extraction.py`
   - 读取 `./datasets/pre/content.pt`，用 BeautifulSoup 提取文本，用jionlp分句，用 https://github.com/crownpku/Information-Extraction-Chinese 进行预处理。
   - 忽略以 ('审判长', '审判员', '代理审判员', '人民陪审员', '书记员', '执行员') 开头的行及之后的行。
   - **`./datasets/feature/entity.pt`** 保存对应文本的LOC，ORG，PER。词和次数的tuple。
   - NER不够行，会有逗号。会有不低的错误率。
   - 有些词应当删除，如“中华人民共和国”。
-- `./NER_IDCNN_CRF\only_soup.py`
+- `./NER_IDCNN_CRF/only_soup.py`
   - 只有 BeautifulSoup。试验代码。
+
+#### BERT
+
+- `./pre_bert.py`
+  - 读取 `./datasets/pre/content.pt`，用 BeautifulSoup 提取文本，获得bert输出。Sliding window。mean。
+- **`./datasets/feature/bert.pt`** 保存对应文本的bert输出。
+  - 空文本（187632）。现在会返回0向量。
 
 
 
@@ -45,10 +54,17 @@ virtualenv: tf1
 
 - `./dataset.py`
   - FeatureDataset
-  - WenshuDataset
+- `./train.py`
 
-TODO:
+## 全数据集测试
 
-BERTOutputDataset
-NEFDataset
-train.py
+TBD
+
+1. 从csv提取json -> 提取html -> 提取文本 -> 断句，NER -> 储存断句结果 
+2. 找稀有的key，储存key的哈希表。
+3. 输入文本 -> NER -> 检索key -> 提取文本 -> bert
+
+## Demo
+
+TBD
+

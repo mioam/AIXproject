@@ -22,7 +22,11 @@ def func(args):
         s = text[i:i+WINDOW]
         tokens = tokenizer(s, return_tensors="pt", padding=True).to(DEVICE)
         outputs.append(bert(**tokens).pooler_output[0].cpu())
-    outputs = torch.mean(torch.stack(outputs, dim=0), dim=0)  # mean
+    if len(outputs) == 0:  # 187632
+        outputs = torch.zeros(768)
+    else:
+        outputs = torch.mean(torch.stack(outputs, dim=0), dim=0)  # mean
+    # print(outputs.shape)
     return outputs
 
 
@@ -35,7 +39,7 @@ def main():
     bert.to(DEVICE)
 
     content = torch.load('./datasets/pre/content.pt')
-    content = content[:10000]
+    # content = content[187631:187633]
 
     n = len(content)
     feature = list(tqdm(map(func, [(tokenizer, bert, e) for e in content]), total=n))

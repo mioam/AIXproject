@@ -3,7 +3,7 @@ from torch import nn
 from torch.nn import functional as F
 
 
-class BertBasedNet(nn.Module):
+class BertNet(nn.Module):
     def __init__(self) -> None:
         super().__init__()
         self.postnet = nn.Sequential(
@@ -11,9 +11,13 @@ class BertBasedNet(nn.Module):
         )
 
     def forward(self, x, y):
-        x = self.postnet(x)
-        y = self.postnet(y)
+        # print(x.shape, y.shape)
+        x = self.postnet(x.reshape(1,-1)).reshape(-1)
+        y = self.postnet(y.reshape(1,-1)).reshape(-1)
+        x = x / x.norm()
+        y = y / y.norm()
         return (x * y).sum()
 
 # 未完成
+
 
