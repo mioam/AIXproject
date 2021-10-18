@@ -3,3 +3,4 @@ __pycache__
 _*
 NER_IDCNN_CRF/tf1
 NER_IDCNN_CRF/
+*.png

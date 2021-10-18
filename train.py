@@ -3,7 +3,7 @@ from torch.nn import functional as F
 import time
 
 from models.net import SimpleNet
-from models.nef import NEFBasedNet
+from models.ner import NEFBasedNet
 from models.bert import BertNet
 
 from dataset import FeatureDataset
