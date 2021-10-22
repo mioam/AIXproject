@@ -67,6 +67,35 @@ def magic(tmp):
     # print(row[0], row[2])
     return j['qwContent']
 
+
+MAX_LENGTH = 200
+
+def split_sentence(text):
+    sentence = hanlp.utils.rules.split_sentence(text)
+    ret = []
+    for s in sentence:
+        if len(s) > MAX_LENGTH:
+            sr = re.sub('([,;，；])', r"\1\n", s)
+            sr = sr.split('\n')
+            l = MAX_LENGTH
+            for x in sr:
+                x = x.strip()
+                if x == '':
+                    continue
+                if len(x) > MAX_LENGTH:
+                    for t in range(0,len(x),MAX_LENGTH):
+                        ret.append(x[t:t+MAX_LENGTH])
+                    l = len(ret[-1])
+                elif len(x) + l > MAX_LENGTH:
+                    ret.append(x)
+                    l = len(ret[-1])
+                else:
+                    ret[-1] = ret[-1] + x
+                    l = len(ret[-1])
+        else:
+            ret.append(s)
+    return ret
+
 def extract_plaintext(html_text):
     # 预处理！
     soup = BeautifulSoup(html_text, 'html.parser')
@@ -80,7 +109,7 @@ def extract_plaintext(html_text):
         # print(tmp)
         text.append(tmp)
     # print(text)
-    text = list(hanlp.utils.rules.split_sentence('\n'.join(text)))
+    text = list(split_sentence('\n'.join(text)))
     return text
 
 def get_key(HanLP, plain_text_arr):
@@ -89,9 +118,17 @@ def get_key(HanLP, plain_text_arr):
         return []
     result = HanLP(plain_text_arr)
     result = result['ner']
-    # for i in tqdm(range(0, len(plain_text_arr), 2048)):
-    #     result.extend(HanLP(plain_text_arr[i:i+2048])['ner'])
     return result
+    # sort_arr = list(enumerate(plain_text_arr))
+    # sort_arr.sort(key=lambda x: len(x[1]))
+    # sort_s = [x[1] for x in sort_arr]
+    # result = []
+    # for i in tqdm(range(0, len(sort_s), 2048)):
+    #     result.extend(HanLP(sort_s[i:i+2048])['ner'])
+    # result = [(x[0], x[2]) for x in zip(sort_arr, result)]
+    # result.sort(key=lambda x: x[0])
+    # print([x[0] for x in result[:40]])
+    # return [x[1] for x in result]
 
 
 def calc(x):
@@ -121,7 +158,7 @@ def main():
         if task not in ('tok', 'ner'):
             del HanLP[task]
     for task in HanLP.tasks.values():
-        task.sampler_builder.batch_size = 32
+        task.sampler_builder.batch_size = 64
 
     cnt = 0
     errcnt = 0
