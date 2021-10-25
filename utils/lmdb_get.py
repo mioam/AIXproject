@@ -12,7 +12,7 @@ if __name__ =='__main__':
     print(txn_map.stat())
 
     # for key, value in txn.cursor():
-    key = '19198'
+    key = '321323'
     value = txn.get(key.encode()).decode()
     for _ in [0]:
         value = json.loads(value)

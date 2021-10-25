@@ -20,7 +20,7 @@
     - list，处理完了的token。
 
 
-#### NER_IDCNN_CRF
+#### ~~NER_IDCNN_CRF~~
 
 requirement:
 
@@ -63,6 +63,15 @@ TBD
 1. 从csv提取json -> 提取html -> 提取文本 -> 断句，NER -> 储存断句结果 
 2. 找稀有的key，储存key的哈希表。
 3. 输入文本 -> NER -> 检索key -> 提取文本 -> bert
+
+- `./utils/extraction.py`
+  - 从csv提NER关键字，存到 `/mnt/data/mzc/key`。
+- `./utils/build_map.py`
+  - 把 `/mnt/data/mzc/key`中的关键字建个索引。
+- `./utils/lmdb_get.py`
+  - 对于给定的文书，查找相关文书。
+- `./utils/key.py`
+  - 对于给定的编号，查找文书关键字。
 
 ## Demo
 
