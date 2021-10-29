@@ -10,13 +10,11 @@ class BertNet(nn.Module):
             nn.Linear(768, 768)
         )
 
-    def forward(self, x, y):
+    def forward(self, x):
         # print(x.shape, y.shape)
-        x = self.postnet(x.reshape(1,-1)).reshape(-1)
-        y = self.postnet(y.reshape(1,-1)).reshape(-1)
+        x = self.postnet(x)
         x = x / x.norm()
-        y = y / y.norm()
-        return (x * y).sum()
+        return x
 
 # 未完成
 

@@ -7,9 +7,23 @@ import csv
 import os
 import lmdb
 import hanlp
+from multiprocessing import Pool
 
 import torch
 from bs4 import BeautifulSoup
+
+class NER:
+    def __init__(self):
+        HanLP = hanlp.load(hanlp.pretrained.mtl.OPEN_TOK_POS_NER_SRL_DEP_SDP_CON_ELECTRA_SMALL_ZH)
+        tasks = list(HanLP.tasks.keys())
+        for task in tasks:
+            if task not in ('tok', 'ner'):
+                del HanLP[task]
+        for task in HanLP.tasks.values():
+            task.sampler_builder.batch_size = 64
+        self.HanLP = HanLP
+    def __call__(self, x):
+        return self.HanLP(x)['ner']
 
 def magic(tmp):
 
@@ -105,6 +119,8 @@ def extract_plaintext(html_text):
         tmp = ''.join(i.split())
         if tmp.startswith(('审判长', '审判员', '代理审判员', '人民陪审员', '书记员', '执行员')):
             break
+            # TODO: replace break with continue
+            # 会不会出现在两行（
         # tmp = jio.split_sentence(tmp, criterion='coarse')
         # print(tmp)
         text.append(tmp)
@@ -112,23 +128,27 @@ def extract_plaintext(html_text):
     text = list(split_sentence('\n'.join(text)))
     return text
 
-def get_key(HanLP, plain_text_arr):
-    # print(plain_text_arr)
+def get_key(ner, plain_text_arr):
     if plain_text_arr == []:
         return []
-    result = HanLP(plain_text_arr)
-    result = result['ner']
-    return result
-    # sort_arr = list(enumerate(plain_text_arr))
-    # sort_arr.sort(key=lambda x: len(x[1]))
-    # sort_s = [x[1] for x in sort_arr]
-    # result = []
-    # for i in tqdm(range(0, len(sort_s), 2048)):
-    #     result.extend(HanLP(sort_s[i:i+2048])['ner'])
-    # result = [(x[0], x[2]) for x in zip(sort_arr, result)]
-    # result.sort(key=lambda x: x[0])
-    # print([x[0] for x in result[:40]])
-    # return [x[1] for x in result]
+    starttime = time.perf_counter()
+
+    # result = ner(plain_text_arr)
+    # print(time.perf_counter() - starttime)
+    # 699.0954339581076
+    # return result
+
+    sort_arr = list(enumerate(plain_text_arr))
+    sort_arr.sort(key=lambda x: len(x[1]))
+    sort_s = [x[1] for x in sort_arr]
+    result = []
+    for i in tqdm(range(0, len(sort_s), 2048)):
+        result.extend(ner(sort_s[i:i+2048]))
+    result = [(x[0], x[1]) for x in zip(sort_arr, result)]
+    result.sort(key=lambda x: x[0])
+    print(time.perf_counter() - starttime)
+    # 673.7641270339955
+    return [x[1] for x in result]
 
 
 def calc(x):
@@ -148,68 +168,95 @@ def calc(x):
                 tmp[a[0]] = 1
     return {'LOC': list(LOC.items()), 'ORG': list(ORG.items()), 'PER': list(PER.items()), }
 
-def main():
-    csv.field_size_limit(500 * 1024 * 1024)
-    env = lmdb.open('/mnt/data/mzc/key', map_size = 1099511627776)
+def work(a, env, ner, start, prefix):
 
-    HanLP = hanlp.load(hanlp.pretrained.mtl.OPEN_TOK_POS_NER_SRL_DEP_SDP_CON_ELECTRA_SMALL_ZH)
-    tasks = list(HanLP.tasks.keys())
-    for task in tasks:
-        if task not in ('tok', 'ner'):
-            del HanLP[task]
-    for task in HanLP.tasks.values():
-        task.sampler_builder.batch_size = 64
+    cnt = start
+    errcnt = 0
+
+    basename = os.path.basename(a)
+    txn = env.begin(write=True)
+
+    print(basename, cnt, errcnt)
+
+    plain_text_arr = []
+    lines = []
+
+    fcsv = csv.reader(open(a, 'r', encoding='utf-8'))
+    flag = False
+    for row in tqdm(fcsv):
+        if not flag:
+            flag = True
+            continue
+        try:
+            qwContent = magic(row[1])
+        except BaseException:
+            errcnt += 1
+            print('ERROR', a, cnt)
+            with open('error', 'w', encoding='UTF-8') as f:
+                f.write(row[1])
+            
+        if qwContent is not None:
+            cnt += 1
+            plain_text = extract_plaintext(qwContent)
+            l = len(plain_text_arr)
+            plain_text_arr.extend(plain_text)
+            r = len(plain_text_arr)
+            # key_words = get_key(HanLP, plain_text)
+            lines.append([prefix + str(cnt), row[0], row[2], basename, l, r])
+            # txn.put(str(cnt).encode(), json.dumps( [row[0], row[2], basename, key_words] ).encode() )
+            # break
+    # print('ok')
+    key_arr = get_key(ner, plain_text_arr)
+    # print(key_arr)
+    for line in lines:
+        count, docId, Id, basename, l, r = line
+        key_words = calc(key_arr[l:r])
+        # print(l, r, key_words)
+        txn.put(count.encode(), json.dumps( [docId, Id, basename, key_words] ).encode() )
+    # exit()
+
+    txn.commit()
+    return cnt - start, errcnt
+
+def getNO(x):
+    return int(''.join([x for x in list(os.path.basename(x)) if x.isdigit()]))
+
+def main():
+
+    # P = 4
+    # remainder = 1
+    # prefix = ['a', 'b', 'c', 'd'][remainder]
+    P = 1
+    remainder = 0
+    prefix = ''
+
+    csv.field_size_limit(500 * 1024 * 1024)
+    env = lmdb.open('/mnt/data/mzc/key_tmp1', map_size = 1099511627776)
+
+    ner = NER()
 
     cnt = 0
     errcnt = 0
     contentList = glob.glob('/mnt/data/mysql_data/*.csv')
+    contentList = [x for x in contentList if getNO(x) % P == remainder]
     # print(contentList)
-    for a in tqdm(contentList):
+    for i, a in tqdm(enumerate(contentList)):
+        _, __ = work(a, env, ner, cnt, prefix)
+        cnt += _
+        errcnt += __
+    #     # break
 
-        basename = os.path.basename(a)
-        txn = env.begin(write=True)
+    # with Pool(2) as pool:
+    #     pool.map_async(work, [(a, i * 100000) for i,a in tqdm(enumerate(contentList))])
+    #     # for i, a in tqdm(enumerate(contentList)):
+    #     #     pool.apply_async(work, (a, env, HanLP, i * 100000))
+    #         # print(i)
+    #         # _, __ = work(a, env, HanLP, i * 100000)
+    #         # cnt += _
+    #         # errcnt += __
+    #     pool.close()
+    #     pool.join()
 
-        print(basename, cnt, errcnt)
-
-        plain_text_arr = []
-        lines = []
-
-        fcsv = csv.reader(open(a, 'r', encoding='utf-8'))
-        flag = False
-        for row in tqdm(fcsv):
-            if not flag:
-                flag = True
-                continue
-            try:
-                qwContent = magic(row[1])
-            except BaseException:
-                errcnt += 1
-                print('ERROR', a, cnt)
-                with open('error', 'w', encoding='UTF-8') as f:
-                    f.write(row[1])
-                
-            if qwContent is not None:
-                cnt += 1
-                plain_text = extract_plaintext(qwContent)
-                l = len(plain_text_arr)
-                plain_text_arr.extend(plain_text)
-                r = len(plain_text_arr)
-                # key_words = get_key(HanLP, plain_text)
-                lines.append([str(cnt), row[0], row[2], basename, l, r])
-                # txn.put(str(cnt).encode(), json.dumps( [row[0], row[2], basename, key_words] ).encode() )
-                # break
-        # print('ok')
-        key_arr = get_key(HanLP, plain_text_arr)
-        # print(key_arr)
-        for line in lines:
-            count, docId, Id, basename, l, r = line
-            key_words = calc(key_arr[l:r])
-            # print(l, r, key_words)
-            txn.put(count.encode(), json.dumps( [docId, Id, basename, key_words] ).encode() )
-        # exit()
-        
-        txn.commit()
-        # break
 
     print(cnt, errcnt)
     env.close()
