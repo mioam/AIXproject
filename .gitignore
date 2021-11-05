@@ -6,3 +6,5 @@ NER_IDCNN_CRF/
 *.png
 error
 orign
+checkpoints/*.pt
+runs

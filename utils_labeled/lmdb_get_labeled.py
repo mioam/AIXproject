@@ -121,10 +121,11 @@ if __name__ =='__main__':
     # print(rel[169439])
     # exit()
 
-    # ufs = UFS(len(rel))
-    # for x, y in relation:
-    #     ufs.merge(x,y)
+    ufs = UFS(len(rel))
+    for x, y in relation:
+        ufs.merge(x,y)
     # split = ufs.split([0.7,0.2,0.1])
+    split = ufs.split([0.5, 0.5])
 
     # DATASET = [[],[],[]]
     # for x, y in relation:
@@ -194,7 +195,8 @@ if __name__ =='__main__':
         # print(rel[int(key)])
         x = int(key)
 
-        now = [x, rel[x], [] ]
+        # now = [x, rel[x], [] ]
+        now = [x, [], [] ]
 
         for i, _ in enumerate(candidate):
             y, num = _
@@ -203,12 +205,13 @@ if __name__ =='__main__':
                 continue
             if (x,y) in rel_pair:
                 truepossitive.append(i)
+                now[1].append((y, i))
                 # save('true', x, y, candidate, important_words, rel[int(key)])
             else:
                 falsepossitive.append(i)
-                now[2].append(y)
-                if len(now[2]) == max(2, len(now[1])):
-                    break
+                now[2].append((y, i))
+                # if len(now[2]) == max(2, len(now[1])):
+                #     break
             #     save('false', x, y, candidate, important_words, rel[int(key)])
             # break
         pn_relation.append(now)
@@ -216,20 +219,24 @@ if __name__ =='__main__':
         # break
 
     
-    ufs = UFS(len(rel))
-    for x in pn_relation:
-        for y in x[1]+x[2]:
-            ufs.merge(x[0],y)
+    # ufs = UFS(len(rel))
+    # for x in pn_relation:
+    #     for y in x[1]+x[2]:
+    #         ufs.merge(x[0],y)
             
-    split = ufs.split([0.7,0.2,0.1])
+    # split = ufs.split([0.7,0.2,0.1])
 
-    DATASET = [[],[],[]]
-    for x in pn_relation:
-        DATASET[split[x[0]]].append(x)
-    print([len(x) for x in DATASET])
-    torch.save(DATASET[0],'/mnt/data/mzc/datasets/pn/train.pt')
-    torch.save(DATASET[1],'/mnt/data/mzc/datasets/pn/valid.pt')
-    torch.save(DATASET[2],'/mnt/data/mzc/datasets/pn/test.pt')
+    # DATASET = [[],[],[]]
+    # for x in pn_relation:
+    #     DATASET[split[x[0]]].append(x)
+    # print([len(x) for x in DATASET])
+    # torch.save(DATASET[0],'/mnt/data/mzc/datasets/pn/train.pt')
+    # torch.save(DATASET[1],'/mnt/data/mzc/datasets/pn/valid.pt')
+    # torch.save(DATASET[2],'/mnt/data/mzc/datasets/pn/test.pt')
+
+    
+    torch.save(split,'/mnt/data/mzc/datasets/all/split.pt')
+    torch.save(pn_relation,'/mnt/data/mzc/datasets/all/relation.pt')
 
     env.close()
     env_map.close()

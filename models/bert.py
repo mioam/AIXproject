@@ -7,7 +7,9 @@ class BertNet(nn.Module):
     def __init__(self) -> None:
         super().__init__()
         self.postnet = nn.Sequential(
-            nn.Linear(768, 768)
+            nn.Linear(768, 768),
+            # nn.ReLU(),
+            # nn.Linear(768, 768)
         )
 
     def forward(self, x):
