@@ -6,7 +6,7 @@ import os
 import numpy as np
 import random
 
-from models.classifier import Net
+from models.classifier import Net, AttnNet
 
 from dataset import FeatureDataset, PairDataset, PNDataset, AllDataset, AllSubset
 
@@ -23,6 +23,13 @@ def get_args():
     parser.add_argument("--num-epoch", default=100, type=int)
     parser.add_argument("--optim", default="AdamW", choices=["Adam", "AdamW"])
     parser.add_argument("--Type", default="default", choices=["default",])
+
+
+    parser.add_argument("--netType", default='Net', choices=["Net", "Attn"])
+    parser.add_argument("--num-layer", default=2, type=int)
+    parser.add_argument("--act", default="ReLU", choices=["ReLU", "GLU"])
+    parser.add_argument("--hidden-size", default=768, type=int)
+    parser.add_argument("--feature-type", default=0, type=int)
 
     parser.add_argument("--load-dir", default='')
     args = parser.parse_args()
@@ -86,25 +93,10 @@ def eva(model, loss_fn, dataloader, step, task_name=None):
         writer.add_scalar(f'true_pos acc/{task_name}', true_pos / pos, step)
         writer.add_scalar(f'true_neg acc/{task_name}', true_neg / neg, step)
     if task_name == 'best':
-        # hist_true = torch.tensor(hist_true)
-        # hist_false = torch.tensor(hist_false)
-        # print(hist_true.shape[0], torch.max(hist_true,dim=0), torch.min(hist_true,dim=0), hist_true.float().mean(dim=0))
-        # print(hist_false.shape[0], torch.max(hist_false,dim=0), torch.min(hist_false,dim=0), hist_false.float().mean(dim=0))
-        torch.save(hist, 'hist.pt')
-        # print(max(hist_true), min(hist_true))
-        # print(max(hist_false), min(hist_false))
-
-        # exit()
-        # import matplotlib.pyplot as plt
-        # plt.hist(hist_true,bins=range(1,200),alpha=0.7,label='true')
-        # plt.hist(hist_false,bins=range(1,200),alpha=0.7,label='false')
-        # plt.legend()
-        # plt.savefig('a.png', dpi=500)
-        # plt.cla()
-        # if hist_true.shape[0] != 0:
-        #     writer.add_histogram(f'hist true/{task_name}', hist_true, step)
-        # if hist_false.shape[0] != 0:
-        #     writer.add_histogram(f'hist false/{task_name}', hist_false, step)
+        global NAME
+        if not os.path.exists('./hist'):
+            os.makedirs('./hist') 
+        torch.save(hist, f'./hist/{NAME}.pt')
 
     return (true_pos + true_neg) / tot
 
@@ -116,7 +108,10 @@ def main():
     global device
     set_random(args.seed)
 
-    model = Net()
+    if args.netType == 'Net':
+        model = Net(num_layer=args.num_layer,act=args.act,hidden_size=args.hidden_size,feature_type=args.feature_type)
+    else:
+        model = AttnNet(96, 8 ,4)
     model.to(device)
 
     if args.optim == 'AdamW':
@@ -131,7 +126,7 @@ def main():
     if args.Type == 'default':
         dataset = AllDataset(bertPath='/mnt/data/mzc/datasets/feature/bert.pt', relationPath='/mnt/data/mzc/datasets/all/relation.pt', splitPath='/mnt/data/mzc/datasets/all/split.pt')
         train_dataset = AllSubset(dataset, 0)
-        valid_dataset = AllSubset(dataset, 1)
+        valid_dataset = AllSubset(dataset, 1, rd=False)
     else:
         raise 'Unknown Type'
 
@@ -171,6 +166,8 @@ def main():
                 global NAME
                 if (BEST is None) or (acc > BEST):
                     BEST = acc
+                    if not os.path.exists('./checkpoints'):
+                        os.makedirs('./checkpoints') 
                     torch.save({'model': model.state_dict(), 'step': step, 'acc': acc, 'NAME': NAME}, os.path.join('./checkpoints', NAME + '.pt'))
 
                 model.train()
@@ -192,8 +189,11 @@ if __name__ == '__main__':
     ti = time.time()
     args = get_args()
     BEST = None
-    NAME = f'{args.seed}_{args.optim}_{args.lr}_{args.batch}_{args.weight_decay}_{args.Type}'
-
+    NAME = f'{args.seed}_{args.optim}_{args.lr}_{args.batch}_{args.weight_decay}_{args.Type}_{args.netType}'
+    if args.netType == 'Net':
+        NAME += f'_{args.num_layer}_{args.act}_{args.hidden_size}_{args.feature_type}'
+    else:
+        NAME += ''
     TIME = f'_time{ti}'
     print(NAME, TIME)
     writer = SummaryWriter(log_dir=os.path.join('runs', NAME+TIME))

@@ -103,10 +103,11 @@ class AllDataset:
 
 
 class AllSubset(torch.utils.data.Dataset):
-    def __init__(self, dataset, part) -> None:
+    def __init__(self, dataset, part, rd=True) -> None:
         super().__init__()
         self.dataset = dataset
         self.part = part
+        self.rand = rd
         data = [
             [x[0], x[1], [a for a in x[2] if self.dataset.split[a[0]] == self.part]]
             for x in self.dataset.relation
@@ -116,20 +117,33 @@ class AllSubset(torch.utils.data.Dataset):
             x for x in data
             if len(x[1]) > 0 or len(x[2]) > 0
         ]
+        self.docs = [i for i,x in enumerate(self.dataset.split) if x == part]
         # print(self.dataset.split[self.dataset.relation[0][0]])
     
     def __getitem__(self, index):
         x = self.data[index]
         a = x[0]
-        if (random.random() < 0.5 or len(x[2]) == 0) and len(x[1]) > 0:
-            # if len(x[1]) == 0:
-            #     print(x)
-            b, num = random.sample(x[1],1)[0]
-            flag = 0
-        elif len(x[2]) > 0:
+        r1 = random.random()
+        r2 = random.random()
+
+        if self.rand and (r1 < 0.5 or len(x[1]) == 0) and r2 < 0.5:
+            b = random.sample(self.docs,1)[0]
+            num = -1
+            flag = 1
+        elif (r1 < 0.5 or len(x[1]) == 0) and len(x[2]) > 0:
             b, num = random.sample(x[2],1)[0]
             flag = 1
+        else:
+            b, num = random.sample(x[1],1)[0]
+            flag = 0
 
+        # if len(x[1]) >= 0 and (r1 < 0.5 or r2 < 0.5 and len(x[2]) == 0) and :
+        #     # if len(x[1]) == 0:
+        #     #     print(x)
+        #     b, num = random.sample(x[1],1)[0]
+        #     flag = 0
+        # elif len(x[2]) > 0:
+        # print(a,b)
         return self.dataset.bert[a], self.dataset.bert[b], flag, (a,b,num,flag)
 
     def __len__(self) -> int:
