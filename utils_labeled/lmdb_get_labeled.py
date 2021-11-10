@@ -4,6 +4,7 @@ import json
 import torch
 from utils import build_map
 import os
+from train import Predict
 
 import matplotlib.pyplot as plt
 
@@ -17,7 +18,7 @@ def getPER(key_words):
     return [word
         for word, count in key_words['PER']]
 
-def compare(a, b): # naive version 比较相同的关键字
+def compare(a, b): # 比较相同的PER关键字
     x = set(getPER(a))
     y = set(getPER(b))
     z = x & y
@@ -25,7 +26,11 @@ def compare(a, b): # naive version 比较相同的关键字
 
 contents = torch.load('/mnt/data/mzc/datasets/pre/content.pt')
 save_cnt = 0
-def save(ty, a, b, candidate, important_words, rel):
+def save(ty: str, a, b, c, info):
+    if ty == 'TrueNegative':
+        return
+    if info[0][2] != 0 or info[0][3] != 0:
+        return
     global save_cnt
     name = f'./_100/{ty}_{save_cnt}'
     os.makedirs(name)
@@ -35,18 +40,17 @@ def save(ty, a, b, candidate, important_words, rel):
         
     with open(name + f'/b_{b}.html','w') as f:
         f.write(contents[b])
-    if ty == 'false':
-        c = rel[0]
+
+    if ty.startswith('False'):
         with open(name + f'/c_{c}.html','w') as f:
             f.write(contents[c])
 
     with open(name + f'/info.txt','w') as f:
-        f.write(str(candidate) + '\n')
-        f.write(str(important_words) + '\n')
-        f.write(str(rel) + '\n')
+        for x in info:
+            f.write(str(x) + '\n')
         f.write(str(json.loads(txn.get(str(a).encode()).decode())) + '\n')
         f.write(str(json.loads(txn.get(str(b).encode()).decode())) + '\n')
-        if ty == 'false':
+        if ty.startswith('False'):
             f.write(str(json.loads(txn.get(str(c).encode()).decode())) + '\n')
 
 
@@ -83,16 +87,19 @@ class UFS:
         ret = [0 for i in range(self.n)]
         for i in b:
             x = torch.multinomial(torch.nn.functional.relu(weights) , 1)
-            ret[i] = x
+            ret[i] = x.item()
             weights[x] -= a[i]
-
         print(weights)
+        for i in range(self.n):
+            # if self.getfa(i) != i:
+            ret[i] = ret[self.getfa(i)]
         return ret
 
 
 
 if __name__ =='__main__':
 
+    # 加载数据库
     env = lmdb.open('/mnt/data/mzc/key_tmp')
     env_map = lmdb.open('/mnt/data/mzc/map_tmp')
 
@@ -101,9 +108,10 @@ if __name__ =='__main__':
     print(txn.stat())
     print(txn_map.stat())
 
+    # 加载 relation
     relation = torch.load('/mnt/data/mzc/datasets/pre/relation.pt')
-    rel = {}
-    rel_pair = {}
+    rel = {} # 每篇文书的相关文书
+    rel_pair = {} # 所有相关文书对 
     for x, y in relation:
         rel_pair[(x,y)] = True
         rel_pair[(y,x)] = True
@@ -114,42 +122,28 @@ if __name__ =='__main__':
         rel[x].append(y)
         rel[y].append(x)
     for x in rel.keys():
-        rel[x] = list(set(rel[x]))# 去重
-
-    # print(rel[100065])
-    # print(rel[90028])
-    # print(rel[169439])
-    # exit()
-
-    ufs = UFS(len(rel))
-    for x, y in relation:
-        ufs.merge(x,y)
-    # split = ufs.split([0.7,0.2,0.1])
-    split = ufs.split([0.5, 0.5])
-
-    # DATASET = [[],[],[]]
-    # for x, y in relation:
-    #     DATASET[split[x]].append((x,y))
-    # print([len(x) for x in DATASET])
-    # torch.save(DATASET[0],'/mnt/data/mzc/datasets/splits/train.pt')
-    # torch.save(DATASET[1],'/mnt/data/mzc/datasets/splits/valid.pt')
-    # torch.save(DATASET[2],'/mnt/data/mzc/datasets/splits/test.pt')
-
+        rel[x] = list(set(rel[x])) # 去重
 
     # MAX = max([len(set(r)) for r in rel.values()])
     # print(MAX)
 
+    
+    # # 分割数据集
+    # ufs = UFS(len(rel))
+    # for x, y in relation:
+    #     ufs.merge(x,y)
+    # # split = ufs.split([0.7,0.2,0.1])
+    # split = ufs.split([0.5, 0.5])
+    # torch.save(split,'/mnt/data/mzc/datasets/all/split.pt')
     # exit()
 
     pn_relation = []
 
-    truepossitive = []
-    falsepossitive = []
     length = []
-    print(len(rel_pair))
-
-    
+    print('the number of relation pairs: ', len(rel_pair))
     WEIGHT = {'LOC':1, 'ORG':1, 'PER':0}
+
+    predict = Predict()
 
     # key = '100065'
     # key = '208140'
@@ -168,8 +162,6 @@ if __name__ =='__main__':
                 continue
             ma += 1
             important_words.append((word, Type))
-            # print(word, Type)
-            # exit()
             for i in range(build_map.Threshold):
                 ret = txn_map.get(build_map.map_key(word,i))
                 if ret is None:
@@ -204,28 +196,35 @@ if __name__ =='__main__':
             if x == y:
                 continue
             if (x,y) in rel_pair:
-                truepossitive.append(i)
                 now[1].append((y, i))
-                # save('true', x, y, candidate, important_words, rel[int(key)])
             else:
-                falsepossitive.append(i)
                 now[2].append((y, i))
-                # if len(now[2]) == max(2, len(now[1])):
-                #     break
-            #     save('false', x, y, candidate, important_words, rel[int(key)])
+            
+            prediction, p0, p1, sx, sy = predict(x,y)
+            label = 0 if (x,y) in rel_pair else 1
+            save(f'{prediction == label}{["Positive","Negative"][prediction]}',
+                 x, y, rel[x][0], [(p0, p1, sx, sy), candidate, important_words])
             # break
+
         pn_relation.append(now)
 
-        # break
+        
 
+    # 保存分割
+    # DATASET = [[],[],[]]
+    # for x, y in relation:
+    #     DATASET[split[x]].append((x,y))
+    # print([len(x) for x in DATASET])
+    # torch.save(DATASET[0],'/mnt/data/mzc/datasets/splits/train.pt')
+    # torch.save(DATASET[1],'/mnt/data/mzc/datasets/splits/valid.pt')
+    # torch.save(DATASET[2],'/mnt/data/mzc/datasets/splits/test.pt')
     
+    # # 正负例数据集 （废弃）
     # ufs = UFS(len(rel))
     # for x in pn_relation:
     #     for y in x[1]+x[2]:
-    #         ufs.merge(x[0],y)
-            
+    #         ufs.merge(x[0],y)        
     # split = ufs.split([0.7,0.2,0.1])
-
     # DATASET = [[],[],[]]
     # for x in pn_relation:
     #     DATASET[split[x[0]]].append(x)
@@ -234,9 +233,9 @@ if __name__ =='__main__':
     # torch.save(DATASET[1],'/mnt/data/mzc/datasets/pn/valid.pt')
     # torch.save(DATASET[2],'/mnt/data/mzc/datasets/pn/test.pt')
 
-    
-    torch.save(split,'/mnt/data/mzc/datasets/all/split.pt')
-    torch.save(pn_relation,'/mnt/data/mzc/datasets/all/relation.pt')
+    # # 保存
+    # torch.save(split,'/mnt/data/mzc/datasets/all/split.pt')
+    # torch.save(pn_relation,'/mnt/data/mzc/datasets/all/relation.pt')
 
     env.close()
     env_map.close()

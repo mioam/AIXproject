@@ -2,8 +2,8 @@ import torch
 import matplotlib.pyplot as plt
 import numpy as np
 
-NAME = 'rand'
-hist = torch.load(f'_hist{NAME}.pt')
+NAME = '42_AdamW_0.001_512_1e-05_default_Attn'
+hist = torch.load(f'hist/{NAME}.pt')
 
 print(len(hist))
 n = 100

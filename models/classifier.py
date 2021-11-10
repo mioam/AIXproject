@@ -49,6 +49,7 @@ class AttnNet(nn.Module):
     def forward(self, x, y):
         x = self.linear(x).reshape(-1, self.x_dim, self.y_dim)
         y = self.linear(y).reshape(-1, self.x_dim, self.y_dim)
-        a = self.attn(x,y,y)[0].reshape(-1, self.x_dim * self.y_dim)
+        a = self.attn(x,y,y)[0]
+        a = a.reshape(-1, self.x_dim * self.y_dim)
         a = self.net(a)
         return a

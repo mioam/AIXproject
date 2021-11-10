@@ -101,6 +101,36 @@ def eva(model, loss_fn, dataloader, step, task_name=None):
     return (true_pos + true_neg) / tot
 
 
+class Predict:
+    def __init__(self, device='cuda') -> None:
+        self.device = device
+        model = AttnNet(96, 8 ,4)
+        model.to(device)
+        NAME = '42_AdamW_0.001_512_1e-05_default_Attn'
+        path = os.path.join('./checkpoints', NAME + '.pt')
+        model.load_state_dict(torch.load(path)['model']) # map_location
+        model.eval()
+        
+        self.dataset = AllDataset(bertPath='/mnt/data/mzc/datasets/feature/bert.pt', relationPath='/mnt/data/mzc/datasets/all/relation.pt', splitPath='/mnt/data/mzc/datasets/all/split.pt')
+        self.model = model
+
+    def getBert(self, x):
+        x_split =self.dataset.split[x]
+        x_bert = self.dataset.bert[x]
+        return x_bert, x_split
+    
+    @torch.no_grad()
+    def __call__(self, x, y):
+        x_bert, x_split = self.getBert(x)
+        y_bert, y_split = self.getBert(y)
+        x_bert = x_bert.unsqueeze(0).to(self.device)
+        y_bert = y_bert.unsqueeze(0).to(self.device)
+        out = self.model(x_bert, y_bert)
+        out = out.squeeze(0)
+        p0, p1 = out[0].item(), out[1].item()
+        return 0 if p0 > p1 else 1, p0, p1, x_split, y_split
+    
+
 def main():
     
     global args
@@ -175,9 +205,10 @@ def main():
     
     path = os.path.join('./checkpoints', NAME +
                         '.pt') if args.load_dir == '' else args.load_dir
-    model.load_state_dict(torch.load(path)['model'])
+    X = torch.load(path)
+    model.load_state_dict(X['model'])
 
-    eva(model, loss_fn, valid_dataloader, step, task_name='best')
+    eva(model, loss_fn, valid_dataloader, X['step'], task_name='best')
 
 
 

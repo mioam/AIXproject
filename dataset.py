@@ -88,7 +88,7 @@ class AllDataset:
         relation = torch.load(relationPath)
         split = torch.load(splitPath)
         print('Relation LOADED.')
-        # print(len(split))
+        print(len(split), len([0 for x in split if x == 0]))
         # print(len(relation))
         # print(split[0])
         # print(relation[0:10])
@@ -126,11 +126,13 @@ class AllSubset(torch.utils.data.Dataset):
         r1 = random.random()
         r2 = random.random()
 
-        if self.rand and (r1 < 0.5 or len(x[1]) == 0) and r2 < 0.5:
+        k = (len(x[2]) + 0.5) / (len(x[1]) + len(x[2]) + 1)
+
+        if self.rand and (r1 < k or len(x[1]) == 0) and r2 < 0.1:
             b = random.sample(self.docs,1)[0]
             num = -1
             flag = 1
-        elif (r1 < 0.5 or len(x[1]) == 0) and len(x[2]) > 0:
+        elif (r1 < k or len(x[1]) == 0) and len(x[2]) > 0:
             b, num = random.sample(x[2],1)[0]
             flag = 1
         else:
